@@ -1,0 +1,122 @@
+{% extends 'main/layouts.html' %}
+{% block title %}    
+    Cart
+{% endblock %}
+{% block body %}
+    <style>
+        .quantity-form {
+            display: inline-block;
+            margin-right: 5px; 
+        }
+        
+        .quantity-form button {
+            width: 30px; 
+            height: 30px;
+            font-size: 16px;
+        }
+        .checkout-div{
+            display: none;
+        }
+        
+    </style>
+
+    {% if user.is_authenticated %}
+    <h1>Your Cart</h1>
+    <table>
+        {% for item in cart %}
+        <tr>
+            <td>{{ item.pizza_name }}</td>
+            <td>${{ item.price }}</td>
+            <td>
+                <form class="quantity-form" method="post" action="{% url 'increase_quantity' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="pizza_id" value="{{ item.pizza_id }}">
+                    <button type="submit">+</button>
+                </form>
+                <span class="quantity">{{ item.quantity }}</span>
+                <form class="quantity-form" method="post" action="{% url 'decrease_quantity' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="pizza_id" value="{{ item.pizza_id }}">
+                    <button type="submit">-</button>
+                </form>
+            </td>
+
+            <td class="total-price" data-price-per-unit="{{ item.price }}">{{ item.total_price }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p>Total Price: <span id="total-price">${{ total_price }}</span></p>
+    <form action="{% url 'clear_cart' %}" method="post">
+        {% csrf_token %}
+        <button type="submit">Clear Cart</button>
+    </form>
+    <button id="checkout-button" > оплатити</button>
+    <div class="checkout-div">
+        <h2>Checkout</h2>
+        <form method="post" action="{% url 'checkout' %}">
+            {% csrf_token %}
+            <div class="form-field">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-field">
+                <label for="phone">Phone</label>
+                <input type="text" id="phone" name="phone" required>
+            </div>
+            <div class="form-field">
+                <label for="city">City</label>
+                <input type="text" id="city" name="city" required>
+            </div>
+            <div class="form-field">
+                <label for="house_number">House Number</label>
+                <input type="text" id="house_number" name="house_number" required>
+            </div>
+            <div class="form-field">
+                <label for="apartment_number">Apartment Number</label>
+                <input type="text" id="apartment_number" name="apartment_number" required>
+            </div>
+            <div class="form-field">
+                <label for="payment_method">Payment Method</label>
+                <select id="payment_method" name="payment_method" required>
+                    <option value="cash">Cash</option>
+                    <option value="online">Online</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label for="delivery_time">Delivery Time</label>
+                <select id="delivery_time" name="delivery_time" required>
+                    <option value="now">Now</option>
+                    <option value="scheduled">Scheduled</option>
+                </select>
+            </div>
+            <button class="checkout-div" type="submit">Place Order</button>
+        </form>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        function updateQuantitySuccess(responseData) {
+            $('#cart-quantity').text(responseData.cart_quantity)
+
+            $('#total-price').text(responseData.total_price.toFixed(2));
+
+            $('.total-price').each(function() {
+                var pizzaId = $(this).data('pizza-id');
+                var pizzaData = responseData.cart_items[pizzaId];
+                if (pizzaData) {
+                    $(this).text(pizzaData.total_price.toFixed(2));
+                }
+            });
+
+        }
+        $("#checkout-button").click(function() {
+            $(".checkout-div").slideToggle(); 
+        });
+    </script>
+
+    {% else %}
+    <div class="alert alert-danger" role="alert">
+        To access your cart, please <a href="{% url 'login' %}">log in</a> or <a href="{% url 'register' %}">register</a>.
+    </div>
+    {% endif %}
+{% endblock %}
